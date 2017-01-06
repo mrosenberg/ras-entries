@@ -7,9 +7,9 @@ class RAS_GF_Prefills {
 
 	public function __construct() {
 
-		add_filter( 'gform_field_value_company_name', array( $this, 'company_name_pre_populate' ) );
-		add_filter( 'gform_field_value_checkout_cart_total', array( $this, 'checkout_cart_total_pre_populate' ) );
-
+		add_filter( 'gform_field_value_company_name',        array( $this, 'company_name_pre_populate'           ) );
+		add_filter( 'gform_field_value_checkout_entry_ids',  array( $this, 'checkout_cart_entry_ids_prepopulate' ) );		
+		add_filter( 'gform_field_value_checkout_cart_total', array( $this, 'checkout_cart_total_pre_populate'    ) );
 	}
 
 
@@ -34,12 +34,7 @@ class RAS_GF_Prefills {
 	} 
 
 
-	/**
-	 ** Fill in the proper cart total before checkout
-	 ** @public 
-	 ** @return string
-	**/ 
-	public function checkout_cart_total_pre_populate( $value ) {
+	private function open_entries() {
 		$user      = wp_get_current_user();
 		$purchases = array();
 		$filter    = array();
@@ -56,7 +51,30 @@ class RAS_GF_Prefills {
 			)			
 		);
 
-		$entries = GFAPI::get_entries( 0, $filter );
+		return GFAPI::get_entries( 0, $filter );
+	}
+
+
+
+	public function checkout_cart_entry_ids_prepopulate() {
+		$entries = $this->open_entries();
+		$ids     = array();
+
+		foreach( $entries as $entry ) {
+			$ids[] = $entry[ 'id' ];
+		}
+
+		return implode( ',', $ids );
+	}
+
+
+	/**
+	 ** Fill in the proper cart total before checkout
+	 ** @public 
+	 ** @return string
+	**/ 
+	public function checkout_cart_total_pre_populate( $value ) {
+		$entries = $this->open_entries();
 
 
 		foreach ( $entries as $entry ) {
